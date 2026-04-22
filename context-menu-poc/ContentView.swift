@@ -24,6 +24,7 @@ class ContextMenuViewController: UIViewController, UIContextMenuInteractionDeleg
     private var tealInteraction: UIContextMenuInteraction!
     private var dualButtonInteraction: UIContextMenuInteraction!
     private var containerInteraction: UIContextMenuInteraction!
+    private var gestureContainerInteraction: UIContextMenuInteraction!
     private var dualButtonProgrammaticTrigger = false
 
     override func viewDidLoad() {
@@ -112,7 +113,45 @@ class ContextMenuViewController: UIViewController, UIContextMenuInteractionDeleg
         containerInteraction = UIContextMenuInteraction(delegate: self)
         containerView.addInteraction(containerInteraction)
 
-        let stack = UIStackView(arrangedSubviews: [menuButton, triggerButton, interactionView, dualButton, containerView])
+        // --- View 6: colored view with context menu + subview with tap gesture ---
+        let gestureContainer = UIView()
+        gestureContainer.backgroundColor = .systemPurple
+        gestureContainer.layer.cornerRadius = 12
+        gestureContainer.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            gestureContainer.widthAnchor.constraint(equalToConstant: 240),
+            gestureContainer.heightAnchor.constraint(equalToConstant: 100)
+        ])
+
+        let tappableView = UIView()
+        tappableView.backgroundColor = .systemYellow
+        tappableView.layer.cornerRadius = 8
+        tappableView.translatesAutoresizingMaskIntoConstraints = false
+        gestureContainer.addSubview(tappableView)
+        NSLayoutConstraint.activate([
+            tappableView.centerXAnchor.constraint(equalTo: gestureContainer.centerXAnchor),
+            tappableView.centerYAnchor.constraint(equalTo: gestureContainer.centerYAnchor),
+            tappableView.widthAnchor.constraint(equalToConstant: 140),
+            tappableView.heightAnchor.constraint(equalToConstant: 50)
+        ])
+
+        let tapLabel = UILabel()
+        tapLabel.text = "Tap Me"
+        tapLabel.textAlignment = .center
+        tapLabel.translatesAutoresizingMaskIntoConstraints = false
+        tappableView.addSubview(tapLabel)
+        NSLayoutConstraint.activate([
+            tapLabel.centerXAnchor.constraint(equalTo: tappableView.centerXAnchor),
+            tapLabel.centerYAnchor.constraint(equalTo: tappableView.centerYAnchor)
+        ])
+
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(tappableViewTapped))
+        tappableView.addGestureRecognizer(tapGesture)
+
+        gestureContainerInteraction = UIContextMenuInteraction(delegate: self)
+        gestureContainer.addInteraction(gestureContainerInteraction)
+
+        let stack = UIStackView(arrangedSubviews: [menuButton, triggerButton, interactionView, dualButton, containerView, gestureContainer])
         stack.axis = .vertical
         stack.spacing = 40
         stack.alignment = .center
@@ -162,6 +201,19 @@ class ContextMenuViewController: UIViewController, UIContextMenuInteractionDeleg
             }
         }
 
+        if interaction === gestureContainerInteraction {
+            return UIContextMenuConfiguration(actionProvider: { _ in
+                UIMenu(title: "Gesture Container Menu", children: [
+                    UIAction(title: "Pin", image: UIImage(systemName: "pin")) { _ in
+                        print("Pin tapped")
+                    },
+                    UIAction(title: "Hide", image: UIImage(systemName: "eye.slash")) { _ in
+                        print("Hide tapped")
+                    }
+                ])
+            })
+        }
+
         if interaction === containerInteraction {
             return UIContextMenuConfiguration(actionProvider: { _ in
                 UIMenu(title: "Container Menu", children: [
@@ -192,6 +244,10 @@ class ContextMenuViewController: UIViewController, UIContextMenuInteractionDeleg
     }
 
     // MARK: - Trigger
+
+    @objc private func tappableViewTapped() {
+        print("tapped")
+    }
 
     @objc private func innerButtonTapped() {
         print("tapped")
